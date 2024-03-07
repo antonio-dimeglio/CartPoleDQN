@@ -18,7 +18,7 @@ The action space is ${0, 1}$, where $0$ means push the cart to the left while $1
 
 The state consists of 4 variables, namely
 
--   $\xi \rightarrow $ the cart position, with values in the interval $[-4.8, 4.8]$ 
+-   $\xi \rightarrow$ the cart position, with values in the interval $[-4.8, 4.8]$ 
 
     An episode ends if $\xi_x$ leaves the interval $(-2.4, 2.4)$.
 
