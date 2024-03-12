@@ -43,7 +43,7 @@ def experiment_different_exploration_strategies():
     for policy in policies:
         for i in range(3):
             start_time = time()
-            actor = Actor(env=env_epsilon,
+            actor = Actor(env=env_epsilon if policy == "eps_greedy" else env_boltzmann,
                           policy_model=policy_model_epsilon if policy == "eps_greedy" else policy_model_boltzmann,
                           target_model=target_model_epsilon if policy == "eps_greedy" else target_model_boltzmann,
                           device=device,

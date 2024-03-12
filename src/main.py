@@ -12,40 +12,6 @@ def main():
     # Create the environment
     env = gym.make("CartPole-v0")
 
-    """
-    # Create the policy model
-    if args.load_model:
-        policy_model = load_model(args.load_path, env.observation_space.shape[0], env.action_space.n)
-    
-    policy_model = Model(env.observation_space.shape[0], env.action_space.n)
-
-    # Create the target model
-    target_model = Model(env.observation_space.shape[0], env.action_space.n)
-
-    # Create the actor
-
-    actor = Actor(env=env,
-                    policy_model=policy_model,
-                    target_model=target_model,
-                    device="cpu",
-                    batch_size=128,
-                    gamma=args.gamma,
-                    tau=args.tau,
-                    learning_rate=args.learning_rate,
-                    memory_size=args.memory_size,
-                    policy=args.policy,
-                    epsilon_start=args.epsilon_start,
-                    epsilon_end=args.epsilon_end,
-                    epsilon_decay=args.epsilon_decay,
-                    temp_start=args.temp_start,
-                    temp_end=args.temp_end,
-                    temp_decay=args.temp_decay)
-    
-    # Train the actor
-
-    results = actor.train()
-    """
-
 
 
 
