@@ -26,7 +26,7 @@ def experiment_different_exploration_strategies():
     target_model_boltzmann = Model(env_boltzmann.observation_space.shape[0], env_boltzmann.action_space.n)
 
     # Create different start and end values for epsilon and tau
-    epsion_starts = [0.9, 0.5, 0.1]
+    epsilon_starts = [0.9, 0.5, 0.1]
     epsilon_ends = [0.05, 0.05, 0.05]
 
     tau_starts = [0.9, 0.5, 0.1]
@@ -53,7 +53,7 @@ def experiment_different_exploration_strategies():
                           learning_rate=1e-3,
                           memory_size=10000,
                           policy=policy,
-                          epsilon_start=epsion_starts[i],
+                          epsilon_start=epsilon_starts[i],
                           epsilon_end=epsilon_ends[i],
                           epsilon_decay=1000,
                           temp_start=tau_starts[i],
@@ -70,8 +70,8 @@ def experiment_different_exploration_strategies():
     plt.clf()
 
     for i in range(3):
-        plt.plot(results[i]["episode_durations"], label=f"epsilon_start={epsion_starts[i]}")
-        plt.plot(results[i+3]["episode_durations"], label=f"tau_start={tau_starts[i]}")
+        plt.plot(results[i], label=f"epsilon_start={epsilon_starts[i]}")
+        plt.plot(results[i+3], label=f"tau_start={tau_starts[i]}")
 
     plt.title("Episode durations for different exploration strategies")
     plt.xlabel("Episode")
