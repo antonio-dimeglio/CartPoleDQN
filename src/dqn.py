@@ -19,7 +19,7 @@ def measure_runtimes():
     uses_memory = [False, False, True, True]
     uses_target = [False, True, False, True]
 
-    runtimes = np.zeros((4, num_trials))
+    runtimes = np.zeros((4, NUM_TRIALS))
 
     for i, curr_agent in enumerate(agents):
         print(f"Measuring runtime for {curr_agent}...")
