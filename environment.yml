@@ -1,4 +1,4 @@
-name: rl
+name: rlcartpole
 channels:
   - pytorch
   - nvidia
@@ -9,3 +9,7 @@ dependencies:
   - torchaudio
   - pytorch-cuda=12.1
   - matplotlib
+  - scipy
+  - numpy
+  - tqdm
+  - tabulate

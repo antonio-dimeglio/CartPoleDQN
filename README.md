@@ -38,26 +38,37 @@ The end state is either one of the aforementioned conditions or if the episode l
 
 A reward of $+1$ is received for every step taken, including the termination step, as we want to keep the pole upright for as long as possible.
 
-## Agent
 
-### Policies
+## Usage
 
-## Model
+The libraries used for this implementation are:
 
-To define the model, pytorch was used.
+- Gymnasium   (agent environment)
+- Pytorch     (deep learning backend)
+- Numpy       (data smoothing for plotting)
+- Matplotlib  (plotting)
+- tqdm        (loading bar for training)
+- tabulate    (rendering of tables in command line)
 
-### Architecture
+If all these libraries are already installed then the entry point to run all the experiments provided, ```dqn.py``` can be directly ran. Otherwise, an environment.yml file is provided to install the required libraries.
 
-Basic architecture generated with [NN-SVG](https://alexlenail.me/NN-SVG/LeNet.html).
+To create an environment for these libraries the ```environment.yml``` file can be used, by pasting the following two lines into the terminal:
 
-
-<img src="nn.svg">
-
-# Usage 
-
-The conda environment used for the development of this project can be installed by using the following command:
-
-```{sh}
+```bash
 conda env create -f environment.yml
-conda activate rl
+conda activate rlcartpole
+```
+
+In terms of possible experiments to run, different options are possible, namely:
+
+- ```run-ablation``` performs an ablation study, comparing a complete DQN with one without experience replay, target model and both.
+- ```run-hyperparameters``` performs multiple experiments, generating plot for different experiments testing the model behaviour when different hyperparameters (such as learning rate, model architecture, etc...) are changed.
+- ```measure-runtimes``` performs a runtime experiment, where each agent (complete or otherwise) is ran for 100 epochs 100 times to test for the average runtime and the standard deviation.
+
+Additionally, when running the script, it is possible to specify the number of episodes for each model used during each experiment, by using the flag ```--num_episodes```; this can also be done for the number of trials of each experiment (so for example we can specify that we want to collect data from the training of a model for 100 episodes 10 times), this is done by using the flag ```--num_trials```
+
+For example, if we wanted to run all experiments available for 200 episodes for each agent for 10 episodes we would do:
+
+```bash
+python .\src\dqn.py --num_episodes 200 --num_trials 10 --run-ablation --run_hyperparameters --measure-runtimes
 ```
