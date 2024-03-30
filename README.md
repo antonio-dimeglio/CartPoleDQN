@@ -1,6 +1,6 @@
 # Deep Q-Network - Cartpole Environment
 
-The goal of the project is to implement a Deep Q-Network approach to the Cartpole Environment implementation provided in the Gymnasium Library 
+The goal of the project is to implement a Deep Q-Network approach to the Cartpole Environment implementation provided in the Gymnasium Library
 [[1]](https://github.com/Farama-Foundation/Gymnasium)
 [[2]](https://www.gymlibrary.dev/environments/classic_control/cart_pole/) .
 
