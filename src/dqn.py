@@ -3,11 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse as ap
 from tabulate import tabulate
-from time import time 
 
 TRAIN_EPISODES = 500
 NUM_TRIALS = 5
-WINDOW_LENGTH = 5
+WINDOW_LENGTH = 20
 
 def moving_average(data, window_length):
     return np.convolve(data, np.ones(window_length), 'valid') / window_length
@@ -15,37 +14,33 @@ def moving_average(data, window_length):
 def measure_runtimes():
     print("Measuring runtimes...")
 
-    agents = ["DQN", "DQN with target network", "DQN with experience replay", "DQN with target network and experience replay"]
+    agents = ["DQN-EN-TN", "DQN-EN", "DQN-TN", "DQN"]
     uses_memory = [False, False, True, True]
     uses_target = [False, True, False, True]
 
-    runtimes = np.zeros((4, num_trials))
+    runtimes_avg = []
+    runtimes_std = []
 
     for i, curr_agent in enumerate(agents):
         print(f"Measuring runtime for {curr_agent}...")
-        for j in range(NUM_TRIALS):
-            print(f"Trial {j + 1}/{NUM_TRIALS}...")
-            start_time = time()
-            agent = Agent(requires_memory=uses_memory[i], requires_target=uses_target[i])
-            agent.train(TRAIN_EPISODES)
-            runtimes[i, j] = time() - start_time
-    
-    runtimes_avg = np.mean(runtimes, axis=1)
-    runtimes_std = np.std(runtimes, axis=1)
+        agent = Agent(requires_memory=uses_memory[i], requires_target=uses_target[i])
+        runtime_curr_agent = agent.benchmark_training()
+
+        runtimes_avg.append(np.mean(runtime_curr_agent))
+        runtimes_std.append(np.std(runtime_curr_agent))
+
 
     table = []
-    for i in range(4):
+    for i in range(len(agents)):
         table.append([agents[i], runtimes_avg[i], runtimes_std[i]])
-    
-    print(tabulate(table, headers=["Agent", "Average Runtime (s)", "Standard Deviation"]))
+
+    print(tabulate(table, headers=["Agent", "Average Runtime (s)", "Standard Deviation Runtime (s)"]))
     print("Runtime measurement complete.")
 
-
-
-def ablation_experiment():
+def ablation_study():
     print("Running ablation study...")
     results = np.zeros((4, TRAIN_EPISODES, NUM_TRIALS))
-    agents = ["DQN", "DQN with target network", "DQN with experience replay", "DQN with target network and experience replay"]
+    agents = ["DQN-ER-TN", "DQN-ER", "DQN-TN", "DQN"]
     uses_memory = [False, False, True, True]
     uses_target = [False, True, False, True]
 
@@ -81,7 +76,7 @@ def learning_rate_experiment():
             results[i, :, j] = agent.train(TRAIN_EPISODES)
         
     for i in range(len(learning_rates)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=f"lr = {learning_rates[i]}")
+        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=r"$\alpha$ = {}".format(learning_rates[i]))
 
     plt.legend()
     plt.xlabel("Episode")
@@ -93,18 +88,35 @@ def learning_rate_experiment():
 
 def policy_experiment():
     print("Running policy experiment...")
-    policies = ["e_greedy", "softmax"]
-    results = np.zeros((len(policies), TRAIN_EPISODES, NUM_TRIALS))
+    epsilons = [0.1, 0.2, 0.5]
+    temperatures = [0.1, 1.0, 2.0]
 
-    for i, policy in enumerate(policies):
-        print(f"Training with policy {policy}...")
+    results_epsilons = np.zeros((len(epsilons), TRAIN_EPISODES, NUM_TRIALS))
+    results_temperatures = np.zeros((len(temperatures), TRAIN_EPISODES, NUM_TRIALS))
+    
+    for i, epsilon in enumerate(epsilons):
+        print(f"Training with epsilon {epsilon}...")
         for j in range(NUM_TRIALS):
             print(f"Trial {j + 1}/{NUM_TRIALS}...")
-            agent = Agent(policy=policy, requires_memory=True, requires_target=True)
-            results[i, :, j] = agent.train(TRAIN_EPISODES)
+            agent = Agent(epsilon=epsilon, requires_memory=True, requires_target=True)
+            results_epsilons[i, :, j] = agent.train(TRAIN_EPISODES)
 
-    for i in range(len(policies)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=policies[i])
+    print("Epsilon experiment complete.")
+
+    for i, temperature in enumerate(temperatures):
+        print(f"Training with temperature {temperature}...")
+        for j in range(NUM_TRIALS):
+            print(f"Trial {j + 1}/{NUM_TRIALS}...")
+            agent = Agent(temperature=temperature, requires_memory=True, requires_target=True)
+            results_temperatures[i, :, j] = agent.train(TRAIN_EPISODES)
+    
+    print("Temperature experiment complete.")
+
+    for i in range(len(epsilons)):
+        plt.plot(moving_average(np.mean(results_epsilons[i], axis=1), WINDOW_LENGTH), label=r"$\epsilon$ = {}".format(epsilons[i]))
+
+    for i in range(len(temperatures)):
+        plt.plot(moving_average(np.mean(results_temperatures[i], axis=1), WINDOW_LENGTH), label=r"$\tau$ = {}".format(temperatures[i]))
 
     plt.legend()
     plt.xlabel("Episode")
@@ -113,6 +125,7 @@ def policy_experiment():
     plt.savefig("policy_experiment.png")
     plt.clf()
     print("Policy experiment complete.")
+
 
 def batch_size_experiment():
     print("Running batch size experiment...")
@@ -127,7 +140,7 @@ def batch_size_experiment():
             results[i, :, j] = agent.train(TRAIN_EPISODES)
 
     for i in range(len(batch_sizes)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=f"batch size = {batch_sizes[i]}")
+        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=r"$b$ = {}".format(batch_sizes[i]))
 
     plt.legend()
     plt.xlabel("Episode")
@@ -150,7 +163,7 @@ def memory_size_experiment():
             results[i, :, j] = agent.train(TRAIN_EPISODES)
 
     for i in range(len(memory_sizes)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=f"memory size = {memory_sizes[i]}")
+        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=r"$m$ = {}".format(memory_sizes[i]))
 
     plt.legend()
     plt.xlabel("Episode")
@@ -162,7 +175,7 @@ def memory_size_experiment():
 
 def update_frequency_experiment():
     print("Running update frequency experiment...")
-    update_frequencies = [10, 50, 100, 200]
+    update_frequencies = [100, 200, 500]
     results = np.zeros((len(update_frequencies), TRAIN_EPISODES, NUM_TRIALS))
 
     for i, update_frequency in enumerate(update_frequencies):
@@ -173,7 +186,7 @@ def update_frequency_experiment():
             results[i, :, j] = agent.train(TRAIN_EPISODES)
 
     for i in range(len(update_frequencies)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=f"update frequency = {update_frequencies[i]}")
+        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=r"$u$ = {}".format(update_frequencies[i]))
 
     plt.legend()
     plt.xlabel("Episode")
@@ -182,52 +195,6 @@ def update_frequency_experiment():
     plt.savefig("update_frequency_experiment.png")
     plt.clf()
     print("Update frequency experiment complete.")
-
-def exploration_factor_experiment():
-    print("Running exploration factor experiment...")
-    epsilons = [0.01, 0.1, 0.2, 0.5]
-    results = np.zeros((len(epsilons), TRAIN_EPISODES, NUM_TRIALS))
-
-    for i, epsilon in enumerate(epsilons):
-        print(f"Training with epsilon {epsilon}...")
-        for j in range(NUM_TRIALS):
-            print(f"Trial {j + 1}/{NUM_TRIALS}...")
-            agent = Agent(epsilon=epsilon, requires_memory=True, requires_target=True)
-            results[i, :, j] = agent.train(TRAIN_EPISODES)
-
-    for i in range(len(epsilons)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=f"epsilon = {epsilons[i]}")
-
-    plt.legend()
-    plt.xlabel("Episode")
-    plt.ylabel("Reward")
-    plt.title("Exploration Factor Experiment")
-    plt.savefig("exploration_factor_experiment.png")
-    plt.clf()
-    print("Exploration factor experiment complete.")
-
-def temperature_experiment():
-    print("Running temperature experiment...")
-    temperatures = [0.1, 0.5, 1.0, 2.0]
-    results = np.zeros((len(temperatures), TRAIN_EPISODES, NUM_TRIALS))
-
-    for i, temperature in enumerate(temperatures):
-        print(f"Training with temperature {temperature}...")
-        for j in range(NUM_TRIALS):
-            print(f"Trial {j + 1}/{NUM_TRIALS}...")
-            agent = Agent(temperature=temperature, requires_memory=True, requires_target=True)
-            results[i, :, j] = agent.train(TRAIN_EPISODES)
-
-    for i in range(len(temperatures)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=f"temperature = {temperatures[i]}")
-
-    plt.legend()
-    plt.xlabel("Episode")
-    plt.ylabel("Reward")
-    plt.title("Temperature Experiment")
-    plt.savefig("temperature_experiment.png")
-    plt.clf()
-    print("Temperature experiment complete.")
 
 def architecture_experiment():
     print("Running architecture experiment...")
@@ -242,7 +209,7 @@ def architecture_experiment():
             results[i, :, j] = agent.train(TRAIN_EPISODES)
 
     for i in range(len(hidden_sizes)):
-        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=f"hidden size = {hidden_sizes[i]}")
+        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=r"$h$ = {}".format(hidden_sizes[i]))
 
     plt.legend()
     plt.xlabel("Episode")
@@ -252,17 +219,42 @@ def architecture_experiment():
     plt.clf()
     print("Architecture experiment complete.")
 
+def dqn_vs_dueling_dqn():
+    print("Running DQN vs Dueling DQN experiment...")
+    agents = ["DQN", "Dueling DQN"]
+    results = np.zeros((2, TRAIN_EPISODES, NUM_TRIALS))
+
+    for i, curr_agent in enumerate(agents):
+        print(f"Training {curr_agent}...")
+        for j in range(NUM_TRIALS):
+            print(f"Trial {j + 1}/{NUM_TRIALS}...")
+            agent = Agent(dueling = True if i == 1 else False, requires_memory=True, requires_target=True)
+            results[i, :, j] = agent.train(TRAIN_EPISODES)
+
+    for i in range(2):
+        plt.plot(moving_average(np.mean(results[i], axis=1), WINDOW_LENGTH), label=agents[i])
+
+    plt.legend()
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.title("DQN vs Dueling DQN Experiment")
+    plt.savefig("dqn_vs_dueling_dqn_experiment.png")
+    plt.clf()
+    print("DQN vs Dueling DQN experiment complete.")
 
 def hyperparameters_experiment():
     learning_rate_experiment()
-    policy_experiment()
     batch_size_experiment()
     memory_size_experiment()
-    update_frequency_experiment()
-    exploration_factor_experiment()
-    temperature_experiment()
     architecture_experiment()
+    update_frequency_experiment()
+    policy_experiment()
+    dqn_vs_dueling_dqn()
 
+
+    print("Hyperparameters experiment complete.")
+
+    
 def main():
     parser = ap.ArgumentParser(
         "Deep Q-Learning for the CartPole environment.",
@@ -295,7 +287,7 @@ def main():
     )
 
     parser.add_argument(
-        "--num_episodes",
+        "--num-episodes",
         type=int,
         default=500,
         help="Number of episodes to train for in the experiments.",
@@ -304,7 +296,7 @@ def main():
     )
 
     parser.add_argument(
-        "--num_trials",
+        "--num-trials",
         type=int,
         default=5,
         help="Number of trials to run for each experiment.",
@@ -312,17 +304,29 @@ def main():
         action="store"
     )
 
-    args = parser.parse_args()
+    parser.add_argument(
+        "--window-length",
+        type=int,
+        default=20,
+        help="Window length for moving average.",
+        nargs="?",
+        action="store"
+    )
 
+    args = parser.parse_args()
+    
     global TRAIN_EPISODES
     TRAIN_EPISODES = args.num_episodes
 
     global NUM_TRIALS
     NUM_TRIALS = args.num_trials
     
+    global WINDOW_LENGTH
+    WINDOW_LENGTH = args.window_length
+
 
     if args.run_ablation:
-        ablation_experiment()
+        ablation_study()
 
     if args.run_hyperparameters:
         hyperparameters_experiment()
